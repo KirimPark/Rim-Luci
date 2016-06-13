@@ -1,0 +1,63 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+     <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+      <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+     <title>TizenXOpenwrt 펌웨어 업그레이드 중 입니다.</title>
+  <script type="text/javascript">
+    var progress_bar_interval;
+
+    function start_progress_bar() {
+      progress_bar_interval = window.setInterval(function() {
+        var progress_bar = document.getElementById("progress_bar");
+        var width = parseInt(progress_bar.style.width);
+        if (isNaN(width)) {
+          width = 0;
+        }
+        if (width < 100) {
+          width += 100 / 60;
+          if (width > 100) {
+            width = 100;
+          }
+          progress_bar.style.width = width + "%";
+        }
+        if (width >= 100) {
+          window.clearInterval(progress_bar_interval);
+          document.getElementById("progress_bar_response").style.display = "block";
+        }
+      }, 1000);
+    }
+  </script>
+</head>
+<body onload="javascript:start_progress_bar();">
+<div id="container">
+  <div id="header">
+    <div class="wrapper">
+      <h1>TizenXOpenwrt</h1>
+      <div id="logo"><img src="<%= resource %>/arduino/logo.png" alt="<%= MODEL %>"/></a></div>
+    </div>
+  </div>
+  <div id="content">
+    <div class="wrapper divide">
+      <h2>Upgrading...</h2>
+    </div>
+    <div class="wrapper divide">
+      <p>업그레이드중입니다. 전원을 종료할경우 시스템의 손상이 올 가능성이 있습니다.
+      </p>
+
+      <div class="progress_bar_container">
+        <div id="progress_bar" class="progress_bar">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  <title>TizenXOpenwrt 펌웨어 upgrade</title>
+</head>
+<body>
+<div id="container">
+  <div id="header">
+    <div class="wrapper">
+      <h1>TizenXOpenwrt</h1>
+       <div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="TizenXOpenwrt"/></a></div>
+      <div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="TizenXOpenwrt"/></a></div>
+      </div>
+  </div>
+  <div id="content">
+    <div class="wrapper">
+      <div id="welcome_container">
+        <h2>펌웨어 업그레이드</h2>
+        업그레이드를 통해 공유기의 <Strong>안정성</Strong>과 <Strong>기능</strong>을 업그레이드 합니다. 
+      </div>
+    </div>
+
+    <div class="wrapper divide">
+      <ul>
+   <% if upgrade_available then %>
+   <form method="post" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+
+        <li>
+    <label class="desc" for="keep">현재 설정을 유지할경우 체크하세요:</label>
+              <!--<div class="input_container"> -->
+      <input type="checkbox" name="keep" id="keep" checked="checked" >
+    <!--</div>-->
+        </li>
+
+        <li>
+    <label class="desc left" for="image">다운로드한 펌웨어를 선택해주세요:</label>
+      <input type="file" name="image" id="image" >  
+        </li> 
+
+        <li>        
+    <div class="input_container">
+      <input type="submit" class="btTxt submit saveForm" value="선택한 펌웨어로 업그레이드를 시도합니다." />
+    </div>
+        </li> 
+      <li>
+      업그레이드를 하게되면 잠시 인터넷이 끊어 집니다.<br>
+      업그레이드 도중 전원을 끄게 되면 업그레이드가 정상적으로 수행되지 않으므로 사용불가 상태가 될 수 있습니다.
+      </li>
+   <% if image_invalid then %>
+    <label class="title">올바르지 않은 펌웨어 이미지 입니다.</label>
+   <% end %>
+   </form>
+   <% else %>
+    <div class="cbi-section-descr"><%:현재 방법으로 펌웨어 업그레이드가 되지않습니다. 개발자 모드를 통해 업그레이드가 필요할 것 같습니다.%></div>
+   <% end %>
+      </ul>
+    </div>
+
+  </div>
+  <!-- #content -->
+  <br class="clear"/>
+</div>
+<!-- #container -->
+</body>
+</html>
+

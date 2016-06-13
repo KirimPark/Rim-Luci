@@ -1,0 +1,262 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  	  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  	 <title>TizenXOpenwrt 인터페이스 설정</title>
+  	 <script type="text/javascript" src="<%= resource %>/xhr.js"></script>
+  	 <script type="text/javascript">
+  	 function change_protocol(val)
+  	 {
+  	 	if (val == "static") 
+  	 		{
+  	 			staticip.className = 'normal';
+  	 			pppoeip.className = 'hidden';
+  	 		}
+  	 	else if (val == "pppoe")
+  	 		{
+  	 			staticip.className = 'hidden';
+  	 			pppoeip.className = 'normal';
+  	 		}
+  	 	else
+  	 		{
+  	 			staticip.className = 'hidden';
+  	 			pppoeip.className = 'hidden';
+  	 		}
+  	 }
+  	 function address_err(val, ele, cls)
+  	 {
+  	 	var filter = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:[.](?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/;
+  	 	if(!filter.test(val))
+  	 	{
+  	 		ele.focus();
+  	 		cls.className='error_print';
+  	 		return false;
+  	 	}
+  	 	else if(ele == "network_dns" && val =="")
+  		{
+  			return true;
+  		}
+  		if(val == "")
+  		{
+  			return false;
+  		}
+  		else
+  		{
+  			cls.className='hidden';
+  			return true;
+  		}
+
+  	 }
+  	 function proto_check()
+  	 {
+  	 	var ret = address_err(network_dns.value,network_dns,de);
+
+  	 	if(network_protocol.value == "static")
+  	 	{
+  	 		
+  	 		if( ret && address_err(network_ipaddress.value,network_ipaddress,ie) && address_err(network_netmask.value,network_netmask,ne) && address_err(network_gateway.value,network_gateway,ge) )
+  	 		{
+  	 			send_post('<%=pcdata(controller .. "/TizenXOpenwrt/network_config")%>', this, 'network.protocol', 'network.ipaddress', 'network.netmask', 'network.gateway', 'network.dns','network.username','network.passwd');
+  	 			return true;
+  	 		}
+  	 		else 
+  	 			return false;
+  	 	}
+  	 	else
+  	 	{
+  	 		if(ret && true){
+  	 			send_post('<%=pcdata(controller .. "/TizenXOpenwrt/network_config")%>', this, 'network.protocol', 'network.ipaddress', 'network.netmask', 'network.gateway', 'network.dns','network.username','network.passwd');
+  	 			return true;
+  	 		}
+  	 		else
+  	 		{
+  	 			return false;
+  	 		}
+  	 	}
+  	 }
+  	 </script>
+</head>
+<body>
+<div id="container">
+	<div id="header">
+		<div class="wrapper">
+		<h1>인터페이스 설정</h1>
+		<div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="return_to_panel"></a></div>
+		<div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="return_to_mpanel"></a></div>
+		</div>
+	</div>
+	<div id ="content">
+	 	 <div class="wrapper divide">
+	 	 <center><p> <h2>인터페이스를 설정을 통해 인터넷에 연결합니다.<h2> </p></center>
+	 	 <br>
+	 	 </div>
+	 	 	<div id="interface_div" class="wrapper divide">
+	 	 	<form id="csnfig_network_form" name = "config_network_form" method ="post" onreset="javascript:formReset(this);" onsubmit="JavaScript: return proto_check();" action="#" autocomplete="off">
+		 	 	<div id="error_response" class="hidden">
+		 	 		<p class="alert"> 에러가 발생하였습니다. </p>
+		 	 	</div>
+		 	 	<ul>
+		 	 		<li>
+		 	 			<%if submit_value then%>
+<fieldset class="cbi-section" id="cbi-apply-network_config">
+	<legend><%:변경 적용중%></legend>
+	<script type="text/javascript">//<![CDATA[
+		var apply_xhr = new XHR();
+
+		apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "restart", "network,")%>', null,
+			function() {
+				var checkfinish = function() {
+					apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "status")%>', null,
+						function(x) {
+							if( x.responseText == 'finish' )
+							{
+								var e = document.getElementById('cbi-apply-network_config-status');
+								if( e )
+								{
+									e.innerHTML = '<%:변경이 적용 되었습니다!%>';
+									window.setTimeout(function() {
+										e.parentNode.style.display = 'none';
+									}, 1000);
+								}
+							}
+							else
+							{
+								var e = document.getElementById('cbi-apply-network_config-status');
+								if( e && x.responseText ) e.innerHTML = x.responseText;
+
+								window.setTimeout(checkfinish, 1000);
+							}
+						}
+					);
+				}
+
+				window.setTimeout(checkfinish, 1000);
+			}
+		);
+	//]]></script>
+
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:설정을 로딩중입니다%>" style="vertical-align:middle; width:32px; height:32px"/>
+	<span id="cbi-apply-network_config-status"><%:변경중입니다 잠시만 기다려주세요...%></span>
+</fieldset>
+<%end%>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="title"> Wan 인터페이스 설정 </label>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="desc" for="protocol">
+		 	 			프로토콜(Protocol)
+		 	 			</label>
+		 	 		</li>
+		 	 		<li>
+		            	 <div class="input_container">
+			              	 <select id="network_protocol" name="network.protocol" onchange="change_protocol(this.value)">
+			                 <% for k, protocol in ipairs(protocols) do %>
+			                 <option value="<%= protocol["code"] %>"
+			                 <% if wan["protocol"] == protocol["code"] then %>
+			                 selected="selected"
+			                 <% end %>
+			                 ><%= protocol["label"] %>
+			                 </option>
+			                 <% end %>
+			                 </select>
+		                 </div>
+	          		</li>
+	          		<div id = "staticip" class="hidden">
+	          		<li>
+		 	 			<label class="desc" for="ipaddress">
+		 	 			IP 주소(IP Address)
+		 	 			</label>
+		 	 			<div class="input_container">
+		 	 				<input id="network_ipaddress" name="network.ipaddress" type="text" value="<%= wan["ipaddress"] %>" maxlength="255" onkeyup="address_err(this.value,network_ipaddress,ie)">
+		 	 			</div>
+		 	 			<div>
+		 	 			<em id = "ie" class = "hidden" >ip주소를 0~255의 숫자로 x.x.x.x 형태로 기록해주세요. </em>
+		 	 			</div>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="desc" for="netmask">
+		 	 			넷 마스크(Net Mask)
+		 	 			</label>
+
+		 	 			<div class="input_container">
+		 	 				<input id="network_netmask" name="network.netmask" type="text" value="<%= wan["netmask"] %>" maxlength="255" onkeyup="address_err(this.value,network_netmask,ne)">
+		 	 			</div>
+		 	 			<div>
+		 	 			<em id = "ne" class = "hidden" >넷마스크 주소를 0~255의 숫자로 x.x.x.x 형태로 기록해주세요. </em>
+		 	 			</div>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="desc" for="gateway">
+		 	 			게이트웨이(Gateway)
+		 	 			</label>
+
+		 	 			<div class="input_container">
+		 	 				<input id="network_gateway" name="network.gateway" type="text" value="<%= wan["gateway"] %>" maxlength="255" onkeyup="address_err(this.value,network_gateway,ge)">
+		 	 			</div>
+		 	 			<div>
+		 	 			<em id = "ge" class = "hidden" >게이트웨이 주소를 0~255의 숫자로 x.x.x.x 형태로 기록해주세요. </em>
+		 	 			</div>
+		 	 		</li>
+		 	 		</div>
+		 	 		<div id = "pppoeip" class="hidden">
+		 	 			<li>
+			 	 			<label class="desc" for="username">
+			 	 			사용자 계정 ID
+			 	 			</label>
+
+			 	 			<div class="input_container">
+			 	 				<input id="network_username" name="network.username" type="text" value="<%= wan["username"] %>" maxlength="255">
+			 	 			</div>
+		 	 			</li>
+		 	 			<li>
+			 	 			<label class="desc" for="password">
+			 	 			사용자 암호
+			 	 			</label>
+
+			 	 			<div class="input_container">
+			 	 				<input id="network_passwd" name="network.passwd" type="text" value="<%= wan["passwd"] %>" maxlength="255">
+			 	 			</div>
+		 	 			</li>
+		 	 		</div>
+		 	 		<li>
+		 	 		</li>
+		 	 		<div id="dns">
+		 	 			<li>
+		 	 			<label class="desc" for="dns">
+		 	 			DNS (DNS Address)
+		 	 			</label>
+
+		 	 			<div class="input_container">
+		 	 				<input id="network_dns" name="network.dns" type="text" value="<%= wan["dns"] %>" maxlength="255" onkeyup="address_err(this.value,network_dns,de)">
+		 	 			</div>
+		 	 			<div>
+		 	 			<em id = "de" class = "hidden">DNS 주소를 0~255의 숫자로 x.x.x.x 형태로 기록해주세요. </em>
+		 	 			</div>
+		 	 			</li>
+		 	 			
+		 	 		</div>		 	 		
+		 	 	</ul>
+		 	 	<div class="wrapper divide">
+		     	 <div class="input_container">
+		        <input id="discard" class="btTxt submit saveForm btn" type="reset" value="취소">
+		        <input id="conf_rest_btn" class="btTxt submit saveForm" type="submit" value="무선랜 설정 변경하기">
+		      </div>
+	 	 	</form>
+	 	 	</div>
+	 </div>
+</div>
+<script type="text/javascript">
+change_protocol(network_protocol.value);
+</script>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/custom_luci.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+
+	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local has_wifi = luci.fs.stat("/etc/config/wireless")
+	      has_wifi = has_wifi and has_wifi.size > 0
+	local _, _, memtotal, memcached, membuffers, memfree, _, swaptotal, swapcached, swapfree = luci.sys.sysinfo()
+	local has_swap
+	if swaptotal > 0 then
+		has_swap = 1
+	end
+	local has_dsl = luci.fs.stat("/etc/init.d/dsl_control")
+
+	if luci.http.formvalue("status") == "1" then
+		local ntm = require "luci.model.network".init()
+		local wan = ntm:get_wannet()
+		local wan6 = ntm:get_wan6net()
+
+		local conn_count = tonumber((
+			luci.sys.exec("wc -l /proc/net/nf_conntrack") or
+			luci.sys.exec("wc -l /proc/net/ip_conntrack") or
+			""):match("%d+")) or 0
+
+		local conn_max = tonumber((
+			luci.sys.exec("sysctl net.nf_conntrack_max") or
+			luci.sys.exec("sysctl net.ipv4.netfilter.ip_conntrack_max") or
+			""):match("%d+")) or 4096
+
+		local rv = {
+			uptime     = luci.sys.uptime(),
+			localtime  = os.date(),
+			loadavg    = { luci.sys.loadavg() },
+			memtotal   = memtotal,
+			memcached  = memcached,
+			membuffers = membuffers,
+			memfree    = memfree,
+			swaptotal  = swaptotal,
+			swapcached = swapcached,
+			swapfree   = swapfree,
+			connmax    = conn_max,
+			conncount  = conn_count,
+			leases     = luci.tools.status.dhcp_leases(),
+			leases6    = luci.tools.status.dhcp6_leases(),
+			wifinets   = luci.tools.status.wifi_networks()
+		}
+
+		if wan then
+			rv.wan = {
+				ipaddr  = wan:ipaddr(),
+				gwaddr  = wan:gwaddr(),
+				netmask = wan:netmask(),
+				dns     = wan:dnsaddrs(),
+				expires = wan:expires(),
+				uptime  = wan:uptime(),
+				proto   = wan:proto(),
+				ifname  = wan:ifname(),
+				link    = wan:adminlink()
+			}
+		end
+
+		if wan6 then
+			rv.wan6 = {
+				ip6addr = wan6:ip6addr(),
+				gw6addr = wan6:gw6addr(),
+				dns     = wan6:dns6addrs(),
+				uptime  = wan6:uptime(),
+				ifname  = wan6:ifname(),
+				link    = wan6:adminlink()
+			}
+		end
+
+		if has_dsl then
+			local dsl_stat = luci.sys.exec("/etc/init.d/dsl_control lucistat")
+			local dsl_func = loadstring(dsl_stat)
+			rv.dsl = dsl_func()
+		end
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+
+	local system, model = luci.sys.sysinfo()
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function progressbar(v, m)
+	{
+		var vn = parseInt(v) || 0;
+		var mn = parseInt(m) || 100;
+		var pc = Math.floor((100 / mn) * vn);
+
+		return String.format(
+			'<div style="width:200px; position:relative; border:1px solid #999999">' +
+				'<div style="background-color:#CCCCCC; width:%d%%; height:15px">' +
+					'<div style="position:absolute; left:0; top:0; text-align:center; width:100%%; color:#000000">' +
+						'<small>%s / %s (%d%%)</small>' +
+					'</div>' +
+				'</div>' +
+			'</div>', pc, v, m, pc
+		);
+	}
+
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+	XHR.poll(5, '<%=REQUEST_URI%>', { status: 1 },
+		function(x, info)
+		{
+			var si = document.getElementById('wan4_i');
+			var ss = document.getElementById('wan4_s');
+			var ifc = info.wan;
+
+			if (ifc && ifc.ifname && ifc.proto != 'none')
+			{
+				var s = String.format(
+					'<strong><%:타입 %>: </strong>%s<br />' +
+					'<strong><%:주소 %>: </strong>%s<br />' +
+					'<strong><%:넷 마스크 %>: </strong>%s<br />' +
+					'<strong><%:게이트 웨이 %>: </strong>%s<br />',
+						ifc.proto,
+						(ifc.ipaddr) ? ifc.ipaddr : '0.0.0.0',
+						(ifc.netmask && ifc.netmask != ifc.ipaddr) ? ifc.netmask : '255.255.255.255',

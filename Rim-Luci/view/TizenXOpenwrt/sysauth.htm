@@ -1,0 +1,107 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  	  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  	  <script type="text/javascript" src="<%= resource %>/cbi.js"></script>
+  	 <body>
+ <div id="container">
+  <div id="header">
+    <div class="wrapper">
+      <h1>TizenXOpenwrt</h1>
+      <div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="TizenXOpenwrt"/></a></div>
+      <div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="TizenXOpenwrt"/></a></div>
+      </div>
+  </div>
+  <div id="content">
+  <div class="wrapper">
+      <div class="wrapper divide"> 
+      	<div id="welcome_container">
+      	<div id="dashboard_container">	 
+<form method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
+		<h2>관리자 권한 로그인</h2>
+			<h3><%: Username 과 Password 를 입력해주세요. %></h3>
+			<%- if fuser then %>
+				<div class="error" style=" color: #c00; background: #fff2f5; margin-top: 0.5em;"><%:Username 혹은  Password 가 일치하지 않습니다. 다시 입력해주세요..%></div>
+			<br />
+			<% end -%>
+		<div id="welcome_container">
+		<ul>
+			<li>
+				<label class="desc" for="username">
+		 			아이디 (ID) :
+		 		</label>
+			</li>
+			<li>
+			 	 <div class="input_container">
+			 	 <input name="username" type="text" value="<%=duser%>" />
+			 	 </div>
+		 	 			
+			</li>
+			<li>
+				<label class="desc" for="password">
+				 비밀번호 (Password) :
+				 </label>
+			</li>
+			<li>
+			 <div class="input_container">
+			 	 <input type="password" name="password" id="focus_password"/>
+			 </div>
+			 </li>
+		 </ul>	
+		 </div>
+		 
+	
+
+		<div class="wrapper divide">
+		<div class="input_container">
+		<input type="submit" value="<%:로그인%>" class="btTxt submit saveForm" />
+		<input type="reset" value="<%:초기화%>" class="btTxt submit saveForm btn" />
+		</div>
+		</div>
+	</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+<script type="text/javascript">//<![CDATA[
+	var input = document.getElementById('focus_password');
+	if (input)
+		input.focus();
+//]]></script>
+
+<%
+local uci  = require "luci.model.uci".cursor()
+local fs  = require "nixio.fs"
+local https_key = uci:get("uhttpd", "main", "key")
+local https_port = uci:get("uhttpd", "main", "listen_https")
+if type(https_port) == "table" then
+	https_port = https_port[1]
+end
+
+if https_port and fs.access(https_key) then
+	https_port = https_port:match("(%d+)$")
+%>
+
+<script type="text/javascript">//<![CDATA[
+	if (document.location.protocol != 'https:') {
+		var url = 'https://' + window.location.hostname + ':' + '<%=https_port%>' + window.location.pathname;
+		var img=new Image;
+		img.onload=function(){window.location = url};
+		img.src='https://' + window.location.hostname + ':' + '<%=https_port%>' + '<%=resource%>/cbi/up.gif?' + Math.random();;
+		setTimeout(function(){
+			img.src=''
+		}, 5000);
+	}
+//]]></script>
+
+<% end %>
+</html>

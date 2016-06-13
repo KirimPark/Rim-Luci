@@ -1,0 +1,227 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  	  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  	  <script type="text/javascript" src="<%= resource %>/xhr.js"></script>
+  	  <script type="text/javascript">
+  	  function change_val(val){
+	  	  if(val == "none")
+	  	  {
+	  	  	wifi_password_container.className='hidden';
+	  	  }
+	  	  else
+	  	  {
+	  	  	wifi_password_container.className='normal';
+	  	  }
+  		}
+	  	function chk_pw(val)
+	  	{
+	  		var check = /^(?=.*[a-zA-Z])(?=.*[a-zA-Z0-9])(?=.*[0-9]).{8,16}$/;
+	  		if(val.length<8)
+	  		{
+	  			pe.className='error_print';
+	  			wifi_password.focus();
+	  			return false;
+	  		}	
+	  		if(!check.test(val))
+	  		{
+	  			pe.className = 'error_print';
+	  			wifi_password.focus();
+	  			return false;
+	  		}
+	  		else
+	  		{
+	  			pe.className = 'hidden';
+	  			return true;
+	  		}
+
+	  	}
+	  	function chk_id(val)
+	  	{
+	  		var check = /^[A-Za-z0-9+]{1,20}$/; 
+	  		if(document.getElementById(wifi_encryption).value == "none")
+	  		{
+	  			return true;
+	  		}
+	  		if(val.length>20)
+	  		{
+	  			ie.className='error_print';
+	  			wifi_ssid.focus();
+	  			return false;
+	  		}	
+	  		if(!check.test(val))
+	  		{
+	  			ie.className = 'error_print';
+	  			wifi_ssid.focus();
+	  			return false;
+	  		}
+	  		else
+	  		{
+	  			ie.className = 'hidden';
+	  			return true;
+	  		}
+
+	  	}
+	  	function send_config()
+	  	{
+	  		if(chk_pw(wifi_password.value) && chk_id(wifi_ssid.value))
+	  		{ 
+	  			send_post('<%=pcdata(controller .. "/TizenXOpenwrt/config")%>', this, 'wifi.ssid', 'wifi.channel', 'wifi.encryption', 'wifi.password');
+	  			return true;
+	  		}
+	  		else{
+	  			return false;
+	  		}
+	  	}
+  	  </script>
+  	 <title>TizenXOpenwrt 무선네트워크 설정</title>
+</head>
+<body>
+<div id="container">
+	<div id="header">
+		<div class="wrapper">
+		<h1>무선네트워크 설정 </h1>
+		<div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="return_to_panel"></a></div>
+		<div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="return_to_mpanel"></a></div>
+		</div>
+	</div>
+	<div id ="content">
+	 	 <div class="wrapper divide">
+	 	 <center><p> <h2>무선 네트워크를 설정합니다.<h2> </p></center>
+	 	 <br>
+	 	 <center><p> 무선 네트워크는 <strong>WPA2</strong>이상의 보안을 추천합니다.</p></center>
+	 	 </div>
+	 	 	<div class="wrapper divide">
+	 	 	<form id="config_form" name = "config_form" method ="post" onreset="javascript:formReset(this);" onsubmit="JavaScript: return send_config();" action="#" autocomplete="off">
+		 	 	<div id="error_response" class="hidden">
+		 	 		<p class="alert"> 에러가 발생하였습니다. </p>
+		 	 	</div>
+		 	 	<ul>
+		 	 		<li>
+		 	 		<%if submit_value then%>
+<fieldset class="cbi-section" id="cbi-apply-wireless_config">
+	<legend><%:변경 적용중%></legend>
+	<script type="text/javascript">//<![CDATA[
+		var apply_xhr = new XHR();
+
+		apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "restart", "wireless,")%>', null,
+			function() {
+				var checkfinish = function() {
+					apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "status")%>', null,
+						function(x) {
+							if( x.responseText == 'finish' )
+							{
+								var e = document.getElementById('cbi-apply-wireless_config-status');
+								if( e )
+								{
+									e.innerHTML = '<%:변경이 적용 되었습니다!%>';
+									window.setTimeout(function() {
+										e.parentNode.style.display = 'none';
+									}, 1000);
+								}
+							}
+							else
+							{
+								var e = document.getElementById('cbi-apply-wireless_config-status');
+								if( e && x.responseText ) e.innerHTML = x.responseText;
+
+								window.setTimeout(checkfinish, 1000);
+							}
+						}
+					);
+				}
+
+				window.setTimeout(checkfinish, 1000);
+			}
+		);
+	//]]></script>
+
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:설정을 로딩중입니다%>" style="vertical-align:middle; width:32px; height:32px"/>
+	<span id="cbi-apply-wireless_config-status"><%:변경중입니다 잠시만 기다려주세요...%></span>
+</fieldset>
+<%end%>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="title"> 와이파이 설정 </label>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="desc" for="ssid">
+		 	 			무선랜 이름(SSID)
+		 	 			</label>
+
+		 	 			<div class="input_container">
+		 	 				<input id="wifi_ssid" name="wifi.ssid" type="text" value="<%= wifi["ssid"] %>" onkeyup="chk_id(this.value)" maxlength="20">
+		 	 			</div>
+		 	 			<div>
+		 	 			<em id = "ie" class = "hidden" >20자 이하의 숫자, 영문으로 된 SSID를 입력해주세요. </em>
+		 	 			</div>
+		 	 		</li>
+		 	 		<li>
+		 	 		<label class="desc left" for="wifi_channel">전송 채널</label>
+		 	 			<div class="input_container">
+			              	 <select id="wifi_channel" name="wifi.channel">
+			                 <% for k, channel in ipairs(channels) do %>
+			                 <option value="<%= channel["code"] %>"
+			                 <% if wifi["channel"] == channel["code"] then %>
+			                 selected="selected"
+			                 <% end %>
+			                 ><%= channel["label"] %>
+			                 </option>
+			                 <% end %>
+			                 </select>
+		                 </div>
+		 	 		<em>채널 같은 경우 기본적으로 자동을 추천합니다.</em>
+		 	 		</li>
+		 	 		<li>
+		 	 		 <label class="desc left" for="wifi_encryption">보안 타입</label>
+		 	 		 </li>
+		 	 		 <li>
+		            	 <div class="input_container">
+			              	 <select id="wifi_encryption" name="wifi.encryption" onchange="change_val(this.value)">
+			                 <% for k, encryption in ipairs(encryptions) do %>
+			                 <option value="<%= encryption["code"] %>"
+			                 <% if wifi["encryption"] == encryption["code"] then %>
+			                 selected="selected"
+			                 <% end %>
+			                 ><%= encryption["label"] %>
+			                 </option>
+			                 <% end %>
+			                 </select>
+		                 </div>
+	          		</li>
+			        <li id="wifi_password_container"
+			        	<% if not wifi["encryption"] or wifi["encryption"] == "none" then %>class="hidden"<% end %>>
+			            <label class="desc" for="wifi_password">Password <span id="req_3" class="req">*</span></label>
+			            <div class="input_container">
+			              <input id="wifi_password" name="wifi.password" type="password" onkeyup="chk_pw(this.value)" value="<%= wifi["password"] %>" maxlength="63">
+			              <div>
+			              <em id = "pn" class = "hidden" ></em>
+			              <em id = "pe" class = "hidden" >패스워드는 8자 이상의 영문, 숫자, 특수문자 조합으로 설정하세요. </em>
+			              </div>
+			            </div>
+			        </li>
+			   	</ul>
+		 	 	<div class="wrapper divide">
+		     	 <div class="input_container">
+		        <input id="discard" class="btTxt submit saveForm btn" type="reset" value="취소">
+		        <input id="conf_rest_btn" class="btTxt submit saveForm" type="submit" value="무선랜 설정 변경하기">
+		      </div>
+		      </div>
+	 	 	</form>
+	 	 	</div>
+	 </div>
+</div>
+<script type="text/javascript">
+change_val(wifi_encryption.value);
+</script>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/custom_luci.js"></script>
+</body>
+</html>

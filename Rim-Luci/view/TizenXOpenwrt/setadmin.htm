@@ -1,0 +1,147 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  	  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  	  <script type="text/javascript" src="<%= resource %>/xhr.js"></script>
+  	  <script type="text/javascript">
+	  	function chk_pw(val)
+	  	{
+	  		var check = /^(?=.*[a-zA-Z])(?=.*[a-zA-Z0-9])(?=.*[0-9]).{8,16}$/;
+	  		if(val.length<8)
+	  		{
+	  			pe.className='error_print';
+	  			wifi_password.focus();
+	  			return false;
+	  		}	
+	  		if(!check.test(val))
+	  		{
+	  			pe.className = 'error_print';
+	  			wifi_password.focus();
+	  			return false;
+	  		}
+	  		else
+	  		{
+	  			pe.className = 'hidden';
+	  			return true;
+	  		}
+
+	  	}
+	  	function rchk_pw(val)
+	  	{
+	  		if(admin_password.value != admin_rpassword.value)
+	  		{
+	  			pr.className = 'error_print';
+	  			wifi_password.focus();
+	  			return false;
+	  		}
+	  		else{
+	  			pr.className = 'hidden';
+	  			return true;
+	  		}
+	  	}
+  	  </script>
+  	 <title>TizenXOpenwrt 비밀번호 설정</title>
+</head>
+<body>
+<div id="container">
+	<div id="header">
+		<div class="wrapper">
+		<h1>비밀번호 설정 </h1>
+		<div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="return_to_panel"></a></div>
+		<div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="return_to_mpanel"></a></div>
+		</div>
+	</div>
+	<div id ="content">
+	 	 <div class="wrapper divide">
+	 	 <center><p> <h2>공유기 비밀번호를 설정합니다.<h2> </p></center>
+	 	 </div>
+	 	 	<div class="wrapper divide">
+	 	 	<form id="password_form" name = "password_form" method ="post" onreset="javascript:formReset(this);" onsubmit="JavaScript: return chk_pw(wifi_password.value)&& rchk_pw(wifi_rpassword.value) && send_post('<%=pcdata(controller .. "/TizenXOpenwrt/config")%>', this, 'admin.password');" action="#" autocomplete="off">
+		 	 	<ul>
+		 	 		<li>
+<%if submit_value then%>
+<fieldset class="cbi-section" id="cbi-apply-admin_config">
+	<legend><%:변경 적용중%></legend>
+	<script type="text/javascript">//<![CDATA[
+		var apply_xhr = new XHR();
+
+		apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "restart", "system,dropbear,")%>', null,
+			function() {
+				var checkfinish = function() {
+					apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "status")%>', null,
+						function(x) {
+							if( x.responseText == 'finish' )
+							{
+								var e = document.getElementById('cbi-apply-admin_config-status');
+								if( e )
+								{
+									e.innerHTML = '<%:변경이 적용 되었습니다!%>';
+									window.setTimeout(function() {
+										e.parentNode.style.display = 'none';
+									}, 1000);
+								}
+							}
+							else
+							{
+								var e = document.getElementById('cbi-apply-admin_config-status');
+								if( e && x.responseText ) e.innerHTML = x.responseText;
+
+								window.setTimeout(checkfinish, 1000);
+							}
+						}
+					);
+				}
+
+				window.setTimeout(checkfinish, 1000);
+			}
+		);
+	//]]></script>
+
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:설정을 로딩중입니다%>" style="vertical-align:middle; width:32px; height:32px"/>
+	<span id="cbi-apply-admin_config-status"><%:변경중입니다 잠시만 기다려주세요...%></span>
+</fieldset>
+<%end%>
+		 	 		</li>
+		 	 		<li>
+		 	 			<label class="desc" for="passwd">
+		 	 			비밀번호
+		 	 			</label>
+ 						  <div class="input_container">
+			              <input id="admin_password" name="admin.password" type="password" onkeyup="chk_pw(this.value)" value="" maxlength="63">
+			              <div>
+			              <em id = "pe" class = "hidden" >패스워드는 8자 이상의 영문 숫자 특수문자 조합으로 설정하세요. </em>
+			              </div>
+			            </div>
+		 	 		</li>
+		 	 		<li>
+		 	 		 <label class="desc" for="passwd">
+		 	 			비밀번호 재입력
+		 	 			</label>
+ 						  <div class="input_container">
+			              <input id="admin_rpassword" name="admin.rpassword" type="password" onkeyup="rchk_pw(this.value)" value="" maxlength="63">
+			              <div>
+			              <em id = "pr" class = "hidden" >패스워드가 일치하지 않습니다. </em>
+			              </div>
+			            </div>
+	          		</li>
+			   	</ul>
+		 	 	<div class="wrapper divide">
+		     	 <div class="input_container">
+		        <input id="discard" class="btTxt submit saveForm btn" type="reset" value="취소">
+		        <input id="conf_rest_btn" class="btTxt submit saveForm" type="submit" value="무선랜 설정 변경하기">
+		      </div>
+	 	 	</form>
+	 	 	</div>
+	 </div>
+</div>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/custom_luci.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+  	  <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+  	 <title>TizenXOpenwrt 설정페이지</title>
+	<!-- css 호출 -->
+</head>
+<body>
+<script type="text/javascript">
+  function c_logout()
+  {
+    if(confirm("재시작 하시겠습니까?") == true){
+      location.replace("<%= pcdata(controller .. '/TizenXOpenwrt/reboot') %>");
+    }
+    else{
+
+    }
+  }
+</script>
+
+	<div id="container">
+  <div id="header">
+    <div class="wrapper">
+      <h1>TizenXOpenwrt</h1>
+      <div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="TizenXOpenwrt"/></a></div>
+      <div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="TizenXOpenwrt"/></a></div>
+      </div>
+  </div>
+  <div id="content">
+  <%if ret_reboot then%>
+  <p><%:재시작 중 입니다 잠시만 기다려주세요...%></p>
+  <script type="text/javascript">setTimeout("location='<%=controller%>/TizenXOpenwrt'", 60000)</script>
+  <%else%>
+    <div class="wrapper">
+      <div class="wrapper divide">
+      <center>
+        <div id="welcome_container">
+          <div id="configurebtn_container">
+            <form method="get" action="<%= pcdata(controller .. '/TizenXOpenwrt/config') %>">
+            <input class="btTxt submit saveForm" type="submit" src value="무선랜 설정" onclick="javascript:return goto('<%= pcdata(controller .. '/TizenXOpenwrt/config') %>');">
+          </form>
+          </div>
+          <div id="configurebtn_container">
+            <form method="get" action="<%= pcdata(controller .. '/TizenXOpenwrt/network_config') %>">
+            <input class="btTxt submit saveForm" type="submit" value="연결 설정" onclick="javascript:return goto('<%= pcdata(controller .. '/TizenXOpenwrt/network_config') %>');">
+          </form>
+          </div>
+           <div id="configurebtn_container">
+            <form method="get" action="<%= pcdata(controller .. '/TizenXOpenwrt/Flash_Firmware') %>">
+            <input class="btTxt submit saveForm" type="submit" value="펌웨어 업그레이드" onclick="javascript:return goto('<%= pcdata(controller .. '/TizenXOpenwrt/Flash_Firmware') %>');">
+          </form>
+          </div>
+          <div id="configurebtn_container">
+            <form method="get" action="<%= pcdata(controller .. '/TizenXOpenwrt/admin_pass') %>">
+            <input class="btTxt submit saveForm" type="submit" value="관리자 비밀번호 변경" onclick="javascript:return goto('<%= pcdata(controller .. '/TizenXOpenwrt/admin_pass') %>');">
+          </form>
+          </div>
+          <div id="configurebtn_container">
+            <form method="get" action="<%= pcdata(controller .. '/admin/status/myprint') %>">
+            <input class="btTxt submit saveForm" type="submit" value="상세 설정 페이지" onclick="javascript:return goto('<%= pcdata(controller .. '/admin/status/myprint') %>');">
+          </form>
+          </div>
+          <div id="configurebtn_container">
+            <form method="get" action="javascript: c_logout()">
+            <input class="btTxt submit saveForm" type="submit" value="재시작">
+          </form>
+          </div>
+        </div>
+        </center>
+    </div>
+    <div class="wrapper divide">
+    <center>
+      <div id="alert_container">
+            <% local uci = luci.model.uci.cursor()
+            uci:load("wireless")
+            encryption = uci:get_first("wireless","wifi-iface","encryption")
+            if encryption == nil or encryption == "none" then
+             %>
+             <div class = "alert alert-danger"><p><h2><strong><%:공유기 무선 인터넷 암호를 등록하지 않으셨습니다.%></strong></h2></p>
+                <p><%:무선 인터넷 암호를 설정하지 않은 공유기는 해킹의 위험성이 있습니다.%></p>
+                <a href="<%=pcdata(luci.dispatcher.build_url("TizenXOpenwrt/config"))%>"><font color="white"><%:무선랜 설정페이지로 이동%></font></a>
+                </div>
+            <%else%>
+            <%end%> 
+              <%- if luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root") then -%>
+                <div class = "alert alert-danger"><p><h2><strong><%:관리자 비밀번호를 한번도 변경 하지 않으셨습니다.%></strong></h2></p>
+                <p><%:공유기 비밀번호를 설정하지 않거나 변경하지 않은 공유기는 보안에 취약합니다.%></p>
+                <a href="<%=pcdata(luci.dispatcher.build_url("TizenXOpenwrt/admin_pass"))%>"><font color="white"><%:설정페이지로 이동%></font></a>
+                </div>
+             <% end %> 
+             <br>
+             <div style="clear:both">
+              <center><h2><strong><%= hostname %></strong> 네트워크 정보</h2></center>
+              </div>
+      </div>
+      </center>
+    </div>
+    <div class="wrapper divide" id="recap">
+      <div id="dashboard_container">
+        <div id="sections_container">
+          <% for name, data in pairs(ifaces) do %>
+          <div class="section" id ="<%=data["address"]%>-interface">
+            <h3 id = "<%=data["address"]%>-status">
+            <% if data["pretty_name"] then %><%= data["pretty_name"] %> (<%= name %>)<% else %>Interface <%= name %><% end %> <% if data["address"] then %><span class="connected">정상적으로 연결됨</span><% else %><span class="disconnected">연결되지 않음</span><% end %></h3>
+            <table>
+              <tr></tr>
+            </table>
+            <p id="<%=data["address"]%>-table">
+              <% if data["address"] then %>
+                <span class="row">
+                  <span class="desc">주소</span>
+                  <span class="val"><%= data["address"] %></span>
+                </span>
+                <span class="row">
+                  <span class="desc">넷마스크</span>
+                  <span class="val"><%= data["netmask"] %></span>
+                </span>
+              <% end %>
+              <span class="row">
+                <span class="desc"><%= hostname %>의 MAC Address</span>
+                <span class="val"><%= data["mac"] %></span>
+              </span>
+              <span class="row">
+                <span class="desc">받은 데이터</span>
+                <span class="val"><%= data["rx"] %></span>
+              </span>
+              <span class="row">
+                <span class="desc">보낸 데이터</span>
+                <span class="val"><%= data["tx"] %></span>
+              </span>
+            </p>
+          </div>
+          <% end %>
+        </div>
+      </div>
+</div>
+</div>
+<% end %>
+</div>
+
+  <!-- #컨테이너  -->
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	require "uci"
+	local nixio = require "nixio"
+
+	local sys  = require "luci.sys"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+	
+
+	local hostname = sys.hostname()
+
+	local request = disp.context.path
+	local request2 = disp.context.request
+
+	local category = request[1]
+	local cattree = category and disp.node(category)
+
+	local leaf = request2[#request2]
+
+	local tree = disp.node()
+	local node = disp.context.dispatched
+
+	local categories = disp.node_childs(tree)
+
+	local c = tree
+	local i , r
+
+	local has_wifi = luci.fs.stat("/etc/config/wireless")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+
+	has_wifi = has_wifi and has_wifi.size >0
+
+	local _, _, memtotal, memcached, membuffers, memfree, _, swaptotal,swapcached,swapfree = luci.sys.sysinfo()
+	local has_swap
+	if swaptotal > 0 then
+		has_swap = 1
+	end
+	local has_dsl = luci.fs.stat("/etc/init.d/dsl_control")
+
+	if luci.http.formvalue("status") == "2" then
+		local ntm = require "luci.model.network".init()
+		local wan = ntm:get_wannet()
+		local wan6 = ntm:get_wan6net()
+	
+		local rv = {
+			uptime	   = luci.sys.uptime(),
+			localtime  = os.date(),
+			loadavg    = { luci.sys.loadavg() },
+			memtotal   = memtotal,
+			memcached  = memcached,
+			membuffers = membuffers,
+			memfree    = memfree,
+			swaptotal  = swaptotal,
+			swapcached = swapcached,
+			swapfree   = swapfree,
+			connmax    = conn_max,
+			concount   = conn_count,
+			leases	   = luci.tools.status.dhcp_leases(),
+			leases6    = luci.tools.status.dhcp6_leases(),
+			wifinets   = luci.tools.status.wifi_networks()
+			}
+		if wan then
+			rv.wan = {
+				ipaddr  = wan:ipaddr(),
+				gwaddr  = wan:gwaddr(),
+				netmask = wan:netmask(),
+				dns	= wan:dnsaddrs(),
+				expires = wan:expires(),
+				uptime  = wan:uptime(),
+				proto   = wan:proto(),
+				ifname  = wan:ifname(),
+				link	= wan:adminlink()
+			}
+		end
+		
+		if wan6 then
+			rv.wan6 = {
+				ip6addr	= wan6:ip6addr(),
+				gw6addr	= wan6:gw6addr(),
+				dns	= wan6:dns6addrs(),
+				uptime	= wan6:uptime(),
+				ifname	= wna6:ifname(),
+				link	= wan6:adminlink()
+			}
+		end
+
+		
+		if has_dsl then
+			local dsl_stat = luci.sys.exec("/etc/init.d/dsl_control lucistat")
+			local dsl_func = loadstring(dsl_stat)
+			rv.dsl = dsl_func()
+		end
+		
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+		
+		return
+
+	end
+
+	local system, model = luci.sys.sysinfo()
+
+	-- tag all nodes leading to this page
+
+	for i, r in ipairs(request) do
+		if c.nodes and c.nodes[r] then
+			c = c.nodes[r]
+			c._menu_selected = true
+		end
+	end
+
+%>
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/css">
+</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"/></script>
+<script type="text/javascript">//<![CDATA[
+	$(document).ready(function(){
+
+		$(".start").click(function(){
+		var id = "1";
+		$.get("http://192.168.1.186:80/",{wifi:id});
+		});
+	});
+	var wifidevs = <%=luci.http.write_json(netdevs) %>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+
+	XHR.poll(5, '<%=REQUEST_URI%>',{status : 2},
+		function(x, info)
+		{
+			var value = {}
+			var btnclick = {}
+			var index = 0;
+			var btnindex = 0;
+			<%
+				local ucs = uci.cursor()
+				local uci = luci.model.uci.cursor()
+				uci:load("module")
+				local line = ucs:get("module","iptable","ipList")
+
+				if line then
+					for ip in string.gmatch(line, "[^%s]+") do
+					%>value[index++] ='<%=ip%>';<%
+					end
+				end
+				
+				line = ucs:get("module","iptable","number")
+				
+				if line then
+					for number in string.gmatch(line, "[^%s]+") do
+					%>btnclick[btnindex++] = '<%=number%>';<%
+					end
+				end
+			%>
+			var mac_size = index;
+
+			for( i = 0 ; i < mac_size; i ++)
+			{
+				var e = document.getElementById(i+'btn');
+				if(e)
+					btnclick[i] = e.value;
+			}
+			var dev = info.wifinets[0];
+			var net = dev.networks[0];		
+			var s ;
+			var assoclist = [];
+			for( var nidx = 0 ; nidx < dev.networks.length; nidx++ )
+			{
+				var net = dev.networks[nidx];
+				var is_assoc = (net.bssid !='00:00:00:00:00:00' && net.channel);
+			
+
+				for( var bssid in net.assoclist)
+				{
+					assoclist.push({
+						bssid:	bssid,
+						signal:	net.assoclist[bssid].signal,
+						noise:	net.assoclist[bssid].noise,
+						rx_rate:net.assoclist[bssid].rx_rate,
+						rx_mcs: net.assoclist[bssid].rx_mcs,
+						rx_40mhz:net.assoclist[bssid].rx_40mhz,
+						tx_rate:net.assoclist[bssid].tx_rate,
+						tx_mcs:	net.assoclist[bssid].tx_mcs,
+						tx_40mhz:net.assoclist[bssid].tx_40mhz,
+						link:	net.link,
+						name: 	net.name
+					});
+				}
+			}
+			var mc = document.getElementById('match_mac_table');
+			
+			if(mc)
+			{
+				while(mc.rows.length > 1)
+					mc.rows[0].parentNode.deleteRow(1);
+			}
+			console.log(mac_size);
+			for( var i = 0 ; i < mac_size ; i ++)
+			{
+				
+				var tr = mc.rows[0].parentNode.insertRow(-1);
+					tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2) );
+				
+				tr.insertCell(-1).innerHTML = String.format(value[i]);
+				var ipaddr = 'none'
+				for( var j = 0 ; j < info.leases.length;j ++ )
+				{
+					console.log(info.leases[j].ipaddr);
+					if(info.leases[j].macaddr.toUpperCase() == value[i])
+						ipaddr = info.leases[j].ipaddr;			
+				}
+				tr.insertCell(-1).innerHTML = String.format(ipaddr);
+				tr.insertCell(-1).innerHTML = String.format(i);
+				tr.insertCell(-1).innerHTML = String.format(
+				'<button class="start" id='+i+'btn value='+btnclick[i]+' onclick=touch(id,value)></btn>');
+				document.getElementById(i+'btn').innerHTML = btnclick[i] == 0? "START" : "END" ;
+
+
+    
+			}
+				
+		}
+	     
+	);
+//]]>
+	function touch(id,value){
+		var btn = document.getElementById(id);
+		var number = "1";
+		if(btn.value=="0")
+		{
+			btn.value="1";
+			btn.innerHTML = "END";
+		}
+		else
+		{
+			btn.value="0";
+			btn.innerHTML = "START";
+		}
+	}
+
+	
+</script>
+
+<body>
+<table class = "cbi-section-table" id="match_mac_table">
+	<tr class = "cbi-section-table-titles">
+		<th class="cbi-section-table-cell">mac addr</th>
+		<th class="cbi-section-table-cell">ip  addr</th>
+		<th class="cbi-section-table-cell">number  </th>
+		<th class="cbi-section-table-cell">button  </th>
+	</tr>
+	<tr class="cbi-section-table-row">
+		<td colspan=5"><em><br /><%:Collecting data . . .%></em></td>
+	</tr>
+</table>
+
+<h3>Add device</h3>
+<input type="text" maxlength=2 name="MAC_1" style="width:30px;ime-mode:disabled; text-transform:uppercase;">
+<input type="text" maxlength=2 name="MAC_2" style="width:30px;ime-mode:disabled;text-transform:uppercase;">
+<input type="text" maxlength=2 name="MAC_3" style="width:30px;ime-mode:disabled;text-transform:uppercase;">
+<input type="text" maxlength=2 name="MAC_4" style="width:30px;ime-mode:disabled;text-transform:uppercase;">
+<input type="text" maxlength=2 name="MAC_5" style="width:30px;ime-mode:disabled;text-transform:uppercase;">
+<input type="text" maxlength=2 name="MAC_6" style="width:30px;ime-mode:disabled;text-transform:uppercase;">
+<button id="MAC" class="start" style="height:16px" value="ADD">ADD</button>
+<em id="error"></em>
+</body>
+<%+footer%>
+

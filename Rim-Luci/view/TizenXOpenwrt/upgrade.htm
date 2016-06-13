@@ -1,0 +1,83 @@
+<%
+local http = require("luci.http")
+http.prepare_content("text/html; charset=utf-8")
+-%>
+
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+     <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+      <link rel="stylesheet" type="text/css" href="<%= resource %>/TizenXOpenwrt/style.css" />
+     <title>TizenXOpenwrt 펌웨어 확인</title>
+  <!-- css 호출 -->
+</head>
+<body>
+<div id="container">
+  <div id="header">
+    <div class="wrapper">
+      <h1>TizenXOpenwrt</h1>
+      <div id="logo"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo.png" alt="TizenXOpenwrt"/></a></div>
+      <div id="logophone"><a href="<%= pcdata(controller .. '/TizenXOpenwrt') %>"><img src="<%= resource %>/TizenXOpenwrt/logo_phone.png" alt="TizenXOpenwrt"/></a></div>
+      </div>
+  </div>
+  <div id="content">
+    <div class="wrapper">
+      <div id="welcome_container">
+        <h2>펌웨어 이미지에 대한 내용입니다.</h2>
+      </div>
+    </div>
+
+    <div class="wrapper divide">
+       <span class="row">
+         <span class="desc">md5 checksum:</span>
+         <span class="val"><%=checksum%></span>
+       </span>
+
+       <span class="row">
+         <span class="desc">펌웨어 이미지 용량:</span>
+         <span class="val"><%
+			local w = require "luci.tools.webadmin"
+			write(w.byte_format(size))
+
+			if storage > 0 then
+				write(luci.i18n.translatef(
+					" (%s valid)",
+					w.byte_format(storage)
+				))
+			end
+         %></span>
+       </span>
+
+       <span class="row">
+         <span class="desc">설정 내용에 대한 초기화 여부:</span>
+         <span class="val"><% if keep then %>
+		공유기에 대한 설정을 그대로 한 뒤 업그레이드를 시도합니다.
+	  <% else %>
+		업그레이드를 하면서 설정을 초기화 합니다.
+	  <% end %>
+	 </span>
+       </span>
+    </div>
+     <div class="wrapper divide">
+	<div class="input_container">
+	<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+		<input class="btTxt submit saveForm btn" type="submit" value="업그레이드 취소" />
+	</form>
+	<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+		<input type="hidden" name="step" value="2" />
+		<input type="hidden" name="keep" value="<%=keep and "1" or ""%>" />
+		<input class="btTxt submit saveForm" type="submit" value="업그레이드 수행" />
+	</form>
+       </div>
+      </div>
+
+
+  </div>
+  <!-- #content -->
+  <br class="clear"/>
+</div>
+<!-- #container -->
+<script type="text/javascript" charset="utf-8" src="<%= resource %>/TizenXOpenwrt/zepto.min.js"></script>
+</body>
+</html>
