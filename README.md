@@ -5,21 +5,24 @@ Rim-Luci
 Guide
 -------------
 
-Rim-Luci´Â Lua,Luci·Î ±¸¼ºµÇ¾î ÀÖÀ¸¹Ç·Î **Openwrt-OS³» Lua¿Í Luci ÆÐÅ°Áö°¡ ¼³Ä¡ µÇ¾îÀÖ¾î¾ß ÇÕ´Ï´Ù.**
+Rim-LuciëŠ” Lua,Lucië¡œ êµ¬ì„±ë˜ì–´ ìžˆìœ¼ë¯€ë¡œ **Openwrt-OSë‚´ Luaì™€ Luci íŒ¨í‚¤ì§€ê°€ ì„¤ì¹˜ ë˜ì–´ìžˆì–´ì•¼ í•©ë‹ˆë‹¤.**
 
-> **¼³Ä¡¹æ¹ý:**
+> **ì„¤ì¹˜ë°©ë²•:**
 
->¡¡1. °øÀ¯±â³» WWWÆú´õ ³»¿¡ WWWÆú´õ¸¦ Overwrite ÇÕ´Ï´Ù.
->¡¡2. view, controller Æú´õ¸¦ /usr/bin/lua³»¿¡ Overwrite ÇÕ´Ï´Ù.
->¡¡3. Luci¿¡ ´ëÇÑ Ä³½Ã°¡ ³²¾ÆÀÖÀ¸¹Ç·Î °øÀ¯±â¸¦ rebootÇÕ´Ï´Ù. 
+>ã€€1. ê³µìœ ê¸°ë‚´ WWWí´ë” ë‚´ì— WWWí´ë”ë¥¼ Overwrite í•©ë‹ˆë‹¤.
+
+>ã€€2. view, controller í´ë”ë¥¼ /usr/bin/luaë‚´ì— Overwrite í•©ë‹ˆë‹¤.
+
+>ã€€3. Luciì— ëŒ€í•œ ìºì‹œê°€ ë‚¨ì•„ìžˆìœ¼ë¯€ë¡œ ê³µìœ ê¸°ë¥¼ rebootí•©ë‹ˆë‹¤. 
 
 
-º¯°æ ³»¿ë
+ë³€ê²½ ë‚´ìš©
 -------------------
 
-°øÀ¯±â ÆäÀÌÁö Á¢¼Ó½Ã °£ÆíÇÏ°Ô ¼³Á¤ÇÒ¼ö ÀÖ´Â ÆäÀÌÁö¸¦ Á¦ÀÛÇÏ¿´½À´Ï´Ù.
->**ÆäÀÌÁö ³»¿¡¼­ ¼öÇàÇÒ ¼ö ÀÖ´Â ³»¿ëÀº ´ÙÀ½°ú °°½À´Ï´Ù.**
-	>> - °øÀ¯±â ºñ¹Ð¹øÈ£ ¼³Á¤
-	> - Wi-Fi(¹«¼±·£) º¸¾È ¼³Á¤ ¹× ºñ¹Ð¹øÈ£ º¯°æ
-	> - Æß¿þ¾î ¾÷±×·¹ÀÌµå
-	> - ÀÎÅÍ³Ý ¿¬°á¼³Á¤
+ê³µìœ ê¸° íŽ˜ì´ì§€ ì ‘ì†ì‹œ ê°„íŽ¸í•˜ê²Œ ì„¤ì •í• ìˆ˜ ìžˆëŠ” íŽ˜ì´ì§€ë¥¼ ì œìž‘í•˜ì˜€ìŠµë‹ˆë‹¤.
+>**íŽ˜ì´ì§€ ë‚´ì—ì„œ ìˆ˜í–‰í•  ìˆ˜ ìžˆëŠ” ë‚´ìš©ì€ ë‹¤ìŒê³¼ ê°™ìŠµë‹ˆë‹¤.**
+>
+- ê³µìœ ê¸° ë¹„ë°€ë²ˆí˜¸ ì„¤ì •
+- Wi-Fi(ë¬´ì„ ëžœ) ë³´ì•ˆ ì„¤ì • ë° ë¹„ë°€ë²ˆí˜¸ ë³€ê²½
+- íŽŒì›¨ì–´ ì—…ê·¸ë ˆì´ë“œ
+- ì¸í„°ë„· ì—°ê²°ì„¤ì •
